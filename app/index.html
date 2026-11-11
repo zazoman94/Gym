@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Gym</title>
+  <meta name="theme-color" content="#0E1520">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Gym">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <div id="envbar" hidden>DESARROLLO · datos de prueba separados</div>
+  <header class="top">
+    <h1 id="title">Gym</h1>
+    <div id="clock" class="clock" hidden></div>
+  </header>
+
+  <main id="view" tabindex="-1"></main>
+
+  <div id="rest" class="rest" hidden>
+    <div class="rest-bar"><div id="rest-fill"></div></div>
+    <div class="rest-row">
+      <span class="rest-label">Descanso</span>
+      <span id="rest-time" class="rest-time">0:00</span>
+      <button class="chip" data-rest="-15">−15</button>
+      <button class="chip" data-rest="15">+15</button>
+      <button class="chip strong" data-rest="skip">Saltar</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" hidden></div>
+
+  <nav class="tabs" aria-label="Secciones">
+    <button data-tab="train" aria-current="page"><svg viewBox="0 0 24 24"><path d="M3 10v4M6 7v10M18 7v10M21 10v4M6 12h12"/></svg>Entrenar</button>
+    <button data-tab="progress"><svg viewBox="0 0 24 24"><path d="M3 20h18M5 16l4-5 4 3 6-8"/></svg>Progreso</button>
+    <button data-tab="history"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>Historial</button>
+    <button data-tab="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></svg>Ajustes</button>
+  </nav>
+
+  <script src="js/version.js"></script>
+  <script src="js/routine.js"></script>
+  <script src="js/body.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

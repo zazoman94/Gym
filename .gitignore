@@ -1,0 +1,9 @@
+node_modules/
+*.log
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/
+.claude/settings.local.json
+# Copias de datos exportadas desde el movil (contienen tus registros)
+gym-*backup-*.json
