@@ -18,7 +18,11 @@ if ((git rev-parse --abbrev-ref HEAD) -ne "develop") { Fail "Tienes que estar en
 if (git status --porcelain) { Fail "Hay cambios sin guardar. Haz commit antes de publicar." }
 
 $vf = Join-Path $Root "app\js\version.js"
-$txt = Get-Content $vf -Raw
+# Todo en UTF-8: PowerShell 5.1 usa otra codificacion por defecto y estropea las tildes
+# (al leer version.js y al recoger los mensajes de git log para el CHANGELOG).
+$utf8 = New-Object System.Text.UTF8Encoding($false)
+[Console]::OutputEncoding = $utf8
+$txt = [IO.File]::ReadAllText($vf, $utf8)
 if ($txt -notmatch 'APP_VERSION = "(\d+)\.(\d+)\.(\d+)"') { Fail "No encuentro la version en app/js/version.js" }
 $ma = [int]$Matches[1]; $mi = [int]$Matches[2]; $pa = [int]$Matches[3]
 $old = "$ma.$mi.$pa"
@@ -36,7 +40,6 @@ Write-Host ($log -join "`n")
 $ok = Read-Host "`n  Publicar en produccion? (s/n)"
 if ($ok -ne "s") { Write-Host "Cancelado."; exit 0 }
 
-$utf8 = New-Object System.Text.UTF8Encoding($false)
 [IO.File]::WriteAllText($vf, ($txt -replace 'APP_VERSION = "[^"]+"', "APP_VERSION = `"$new`""), $utf8)
 
 $cl = Join-Path $Root "CHANGELOG.md"

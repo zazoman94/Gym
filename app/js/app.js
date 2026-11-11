@@ -10,7 +10,8 @@
   const dateShort = iso => new Date(iso).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit" });
   const dateLong = iso => new Date(iso).toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short" });
   const ago = iso => { const d = Math.floor((Date.now() - new Date(iso)) / 864e5); return d <= 0 ? "hoy" : d === 1 ? "ayer" : `hace ${d} días`; };
-  const CHECK = '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  const MW_URL = "https://musclewiki.com/es-es/exercise/";   /* + campo mw del ejercicio (routine.js) */
+  const CHECK ='<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 
   if (S.ENV === "dev") { document.body.classList.add("dev"); $("#envbar").hidden = false; document.title = "Gym DEV"; }
 
@@ -32,14 +33,19 @@
     return f.length ? (f[0].day + 1) % DAYS.length : 0;
   }
 
+  /* Series iniciales de un ejercicio: las previstas (o las de la última vez, hasta 6) con el último peso usado */
+  function newSets(id, planSets) {
+    const last = S.lastFor(id);
+    const w = last ? last.sets[0].w : EXERCISES[id].w0;
+    return Array.from({ length: Math.max(planSets, last ? Math.min(last.sets.length, 6) : 0) }, () => ({ w: w == null ? null : w, r: null, done: false }));
+  }
+
+  /* Completado = todas las series que hay en pantalla están marcadas (y hay al menos una) */
+  const isComplete = sets => sets.length > 0 && sets.every(x => x.done);
+
   function startSession(day) {
     const entries = {};
-    DAYS[day].ex.forEach(([id, sets]) => {
-      const last = S.lastFor(id);
-      const ex = EXERCISES[id];
-      const w = last ? last.sets[0].w : ex.w0;
-      entries[id] = Array.from({ length: Math.max(sets, last ? Math.min(last.sets.length, 6) : 0) }, () => ({ w: w == null ? null : w, r: null, done: false }));
-    });
+    DAYS[day].ex.forEach(([id, sets]) => { entries[id] = newSets(id, sets); });
     const s = { id: Date.now().toString(36), day, start: new Date().toISOString(), end: null, entries };
     S.data.sessions.push(s); S.data.active = s.id; S.save();
     ui.open = DAYS[day].ex[0][0];
@@ -67,11 +73,15 @@
     const plan = DAYS[s.day];
     $("#title").textContent = plan.name;
     let doneEx = 0;
+    /* Si la rutina tiene un ejercicio que no estaba al empezar esta sesión (rutina cambiada), se añade con sus series */
+    let added = false;
+    plan.ex.forEach(([id, planSets]) => { if (!s.entries[id]) { s.entries[id] = newSets(id, planSets); added = true; } });
+    if (added) S.save();
     const cards = plan.ex.map(([id, planSets, lo, hi, note]) => {
       const ex = EXERCISES[id];
-      const sets = s.entries[id] || (s.entries[id] = []);
+      const sets = s.entries[id];
       const nDone = sets.filter(x => x.done).length;
-      const complete = nDone >= planSets;
+      const complete = isComplete(sets);
       if (complete) doneEx++;
       const open = ui.open === id;
       const unit = ex.unit === "s" ? "seg" : "reps";
@@ -89,11 +99,12 @@
       const wLabel = ex.assisted ? "asist. kg" : ex.perSide ? "kg c/u" : "kg";
       return `<section class="ex ${complete ? "done" : ""}" data-ex="${id}">
         <button class="ex-head" data-toggle="${id}" aria-expanded="${open}">
-          <h3>${esc(ex.n)}</h3><span class="count">${nDone}/${planSets}</span>
+          <h3>${esc(ex.n)}</h3><span class="count">${nDone}/${sets.length}</span>
           <span class="meta">${planSets} × ${lo === hi ? lo : lo + "-" + hi} ${unit}${note ? " · " + esc(note) : ""}</span>
         </button>
         ${open ? `<div class="ex-body">
           <div class="ex-info">${bodySVG(ex.p, ex.s)}<div><ul>${ex.t.map(t => `<li>${esc(t)}</li>`).join("")}</ul></div></div>
+          ${ex.mw ? `<a class="btn ghost mwlink" href="${MW_URL}${encodeURIComponent(ex.mw)}" target="_blank" rel="noopener">Ver en MuscleWiki<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></a>` : ""}
           ${lastTxt}${hint}
           <div class="sethead"><span>#</span><span>${ex.w0 == null ? "lastre kg" : wLabel}</span><span>${unit}</span><span></span></div>
           <div class="sets">${sets.map((x, i) => `
@@ -131,8 +142,7 @@
         if (set.r == null) { const ph = document.getElementById(`r-${id}-${i}`); set.r = parseNum(ph && ph.placeholder); }
         set.done = true;
         const plan = DAYS[s.day].ex.find(x => x[0] === id);
-        const allDone = s.entries[id].filter(x => x.done).length >= plan[1] && s.entries[id].every(x => x.done);
-        if (allDone) { const idx = DAYS[s.day].ex.indexOf(plan); const nx = DAYS[s.day].ex.slice(idx + 1).find(x => !(s.entries[x[0]] || []).some(y => y.done)); if (nx) ui.open = nx[0]; }
+        if (isComplete(s.entries[id])) { const idx = DAYS[s.day].ex.indexOf(plan); const nx = DAYS[s.day].ex.slice(idx + 1).find(x => !(s.entries[x[0]] || []).some(y => y.done)); if (nx) ui.open = nx[0]; }
       } else set.done = false;
       S.save(); render(); return;
     }
