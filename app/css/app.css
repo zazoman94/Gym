@@ -32,7 +32,6 @@ body.dev .top { padding-top: 14px; }
 h1, h2, h3 { font-family: var(--head); font-stretch: condensed; text-transform: uppercase; letter-spacing: .02em; margin: 0; line-height: 1.05; }
 h1 { font-size: 1.9rem; font-weight: 800; }
 h2 { font-size: 1.25rem; font-weight: 700; }
-.clock { font-family: var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
 
 main { padding: 6px max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, env(safe-area-inset-left, 0px)); display: grid; gap: 14px; max-width: 720px; margin: 0 auto; outline: none; }
 .muted { color: var(--muted); }
@@ -47,7 +46,6 @@ main { padding: 6px max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, en
 .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 .row > .btn { flex: 1; }
 .chip { border: 1px solid var(--line); background: var(--surface-2); border-radius: 999px; padding: 6px 12px; font-size: .85rem; font-weight: 600; }
-.chip.strong { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
 
 /* Selección de día */
 .days { display: grid; gap: 10px; }
@@ -90,17 +88,6 @@ main { padding: 6px max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, en
 .set.ok .check svg { stroke: var(--on-accent); }
 .set.ok input { border-color: color-mix(in srgb, var(--good) 50%, var(--line)); }
 .sethead { display: grid; grid-template-columns: 26px 1fr 1fr 52px; gap: 8px; font-size: .68rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); text-align: center; }
-
-/* Descanso */
-.rest { position: fixed; left: 0; right: 0; bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px)); z-index: 20; background: var(--surface-2); border-top: 1px solid var(--line); padding: 0 max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px)); }
-.rest-bar { height: 4px; margin: 0 calc(-1 * max(16px, env(safe-area-inset-left, 0px))) 8px; background: var(--line); }
-#rest-fill { height: 100%; background: var(--accent); width: 0; }
-.rest.over #rest-fill { background: var(--good); }
-.rest-row { display: flex; align-items: center; gap: 8px; max-width: 720px; margin: 0 auto; }
-.rest-label { font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
-.rest-time { font-family: var(--mono); font-size: 1.6rem; font-weight: 600; margin-right: auto; font-variant-numeric: tabular-nums; }
-.rest.over .rest-time { color: var(--good); }
-body.resting main { padding-bottom: 90px; }
 
 /* Navegación inferior */
 .tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; display: grid; grid-template-columns: repeat(4, 1fr); background: var(--surface); border-top: 1px solid var(--line); padding: 0 env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); height: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px)); }

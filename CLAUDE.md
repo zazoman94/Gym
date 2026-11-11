@@ -21,5 +21,5 @@ App PWA personal para registrar entrenamientos de gimnasio desde el móvil. El u
 
 - `app/js/routine.js`: ejercicios (`EXERCISES`) y días (`DAYS`: `[id, series, repsMin, repsMax, nota]`). Para cambiar la rutina, edita aquí.
 - `app/js/store.js`: carga/guardado, últimas series de un ejercicio, series para gráficas, exportar/importar, datos de ejemplo.
-- `app/js/app.js`: las cuatro pantallas (Entrenar, Progreso, Historial, Ajustes), temporizador de descanso, wake lock, registro del service worker y aviso de actualización.
+- `app/js/app.js`: las cuatro pantallas (Entrenar, Progreso, Historial, Ajustes), pantalla siempre encendida durante el entrenamiento (wake lock), registro del service worker y aviso de actualización.
 - `scripts/`: `setup.ps1` (una vez), `dev.ps1`, `release.ps1`, `backup.ps1` (copia `git bundle` en OneDrive; la llama el hook `scripts/hooks/post-commit`).

@@ -7,7 +7,7 @@
   const KEY = `gym:${ENV}:v1`;
   const SCHEMA = 1;
 
-  const empty = () => ({ schema: SCHEMA, sessions: [], active: null, settings: { restBig: 150, restSmall: 75, sound: true, vibrate: true } });
+  const empty = () => ({ schema: SCHEMA, sessions: [], active: null, settings: {} });
 
   function load() {
     try {

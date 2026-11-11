@@ -10,7 +10,6 @@
   const dateShort = iso => new Date(iso).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit" });
   const dateLong = iso => new Date(iso).toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short" });
   const ago = iso => { const d = Math.floor((Date.now() - new Date(iso)) / 864e5); return d <= 0 ? "hoy" : d === 1 ? "ayer" : `hace ${d} días`; };
-  const mmss = s => { s = Math.max(0, Math.round(s)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
   const CHECK = '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 
   if (S.ENV === "dev") { document.body.classList.add("dev"); $("#envbar").hidden = false; document.title = "Gym DEV"; }
@@ -25,7 +24,6 @@
   function render() {
     const fn = { train: renderTrain, progress: renderProgress, history: renderHistory, settings: renderSettings }[ui.tab];
     fn();
-    updateClock();
   }
 
   /* ---------- Entrenar ---------- */
@@ -123,7 +121,6 @@
   view.addEventListener("click", e => {
     const t = e.target.closest("button");
     if (!t) return;
-    unlockAudio();
     const s = S.activeSession();
     if (t.dataset.start) return startSession(+t.dataset.start);
     if (t.dataset.toggle) { ui.open = ui.open === t.dataset.toggle ? null : t.dataset.toggle; render(); const el = document.querySelector(`[data-ex="${t.dataset.toggle}"]`); if (el && ui.open) el.scrollIntoView({ block: "nearest" }); return; }
@@ -134,7 +131,6 @@
         if (set.r == null) { const ph = document.getElementById(`r-${id}-${i}`); set.r = parseNum(ph && ph.placeholder); }
         set.done = true;
         const plan = DAYS[s.day].ex.find(x => x[0] === id);
-        startRest(EXERCISES[id].big ? S.data.settings.restBig : S.data.settings.restSmall);
         const allDone = s.entries[id].filter(x => x.done).length >= plan[1] && s.entries[id].every(x => x.done);
         if (allDone) { const idx = DAYS[s.day].ex.indexOf(plan); const nx = DAYS[s.day].ex.slice(idx + 1).find(x => !(s.entries[x[0]] || []).some(y => y.done)); if (nx) ui.open = nx[0]; }
       } else set.done = false;
@@ -148,10 +144,10 @@
       for (const k in s.entries) { s.entries[k] = s.entries[k].filter(x => x.done); if (!s.entries[k].length) delete s.entries[k]; }
       if (!Object.keys(s.entries).length) { S.data.sessions = S.data.sessions.filter(x => x.id !== s.id); toast("No había series marcadas: no se ha guardado."); }
       else toast("Entrenamiento guardado");
-      S.data.active = null; S.save(); stopRest(); releaseWakeLock(); ui.open = null; render(); window.scrollTo(0, 0); return;
+      S.data.active = null; S.save(); releaseWakeLock(); ui.open = null; render(); window.scrollTo(0, 0); return;
     }
     if (act === "discard") { ui.confirm = "discard"; render(); return; }
-    if (act === "discard-yes" && s) { S.data.sessions = S.data.sessions.filter(x => x.id !== s.id); S.data.active = null; S.save(); ui.confirm = null; stopRest(); releaseWakeLock(); render(); toast("Entrenamiento descartado"); return; }
+    if (act === "discard-yes" && s) { S.data.sessions = S.data.sessions.filter(x => x.id !== s.id); S.data.active = null; S.save(); ui.confirm = null; releaseWakeLock(); render(); toast("Entrenamiento descartado"); return; }
     if (act === "cancel") { ui.confirm = null; render(); return; }
     if (act === "del-session") { ui.confirm = "del:" + t.dataset.id; render(); return; }
     if (act === "del-yes") { S.data.sessions = S.data.sessions.filter(x => x.id !== t.dataset.id); S.save(); ui.confirm = null; render(); toast("Sesión borrada"); return; }
@@ -159,7 +155,7 @@
     if (act === "import") return $("#importfile").click();
     if (act === "reset") { ui.confirm = "reset"; render(); return; }
     if (act === "reset-yes") { S.reset(); ui.confirm = null; render(); toast("Datos borrados"); return; }
-    if (act === "seed") { S.seedDemo(); stopRest(); releaseWakeLock(); toast("Datos de ejemplo cargados"); render(); return; }
+    if (act === "seed") { S.seedDemo(); releaseWakeLock(); toast("Datos de ejemplo cargados"); render(); return; }
     if (act === "install" && deferredInstall) { deferredInstall.prompt(); deferredInstall = null; return; }
     if (act === "update") return checkUpdate(true);
   });
@@ -178,8 +174,6 @@
       } else set.r = parseNum(t.value);
       S.save();
     }
-    if (t.id === "restBig" || t.id === "restSmall") { const v = parseInt(t.value, 10); if (v > 0) { S.data.settings[t.id] = v; S.save(); toast("Guardado"); } }
-    if (t.id === "sound" || t.id === "vibrate") { S.data.settings[t.id] = t.checked; S.save(); }
     if (t.id === "progEx") { ui.progEx = t.value; renderProgress(); }
     if (t.id === "importfile" && t.files[0]) {
       const r = new FileReader();
@@ -196,47 +190,11 @@
     });
   }
 
-  /* ---------- Reloj y descanso ---------- */
-  let restEnd = 0, restTotal = 0, restBeeped = false;
-  function startRest(sec) { restTotal = sec; restEnd = Date.now() + sec * 1000; restBeeped = false; $("#rest").hidden = false; document.body.classList.add("resting"); tick(); }
-  function stopRest() { restEnd = 0; $("#rest").hidden = true; $("#rest").classList.remove("over"); document.body.classList.remove("resting"); }
-  $("#rest").addEventListener("click", e => {
-    const v = e.target.dataset && e.target.dataset.rest; if (!v) return;
-    if (v === "skip") return stopRest();
-    restEnd += +v * 1000; restTotal = Math.max(1, restTotal + +v); restBeeped = restBeeped && Date.now() > restEnd; tick();
-  });
-  function tick() {
-    if (restEnd) {
-      const left = (restEnd - Date.now()) / 1000;
-      const over = left <= 0;
-      $("#rest").classList.toggle("over", over);
-      $("#rest-time").textContent = over ? "+" + mmss(-left) : mmss(left);
-      $("#rest-fill").style.width = over ? "100%" : `${100 - left / restTotal * 100}%`;
-      if (over && !restBeeped) { restBeeped = true; alertRest(); }
-      if (left < -90) stopRest();
-    }
-    updateClock();
-  }
-  setInterval(tick, 250);
-  function updateClock() {
-    const s = S.activeSession(), c = $("#clock");
-    if (s && ui.tab === "train") { c.hidden = false; c.textContent = mmss((Date.now() - new Date(s.start)) / 1000); } else c.hidden = true;
-  }
-
-  let audio = null;
-  function unlockAudio() { if (!audio && S.data.settings.sound) { try { audio = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { } } }
-  function alertRest() {
-    if (S.data.settings.vibrate && navigator.vibrate) navigator.vibrate([200, 100, 200]);
-    if (S.data.settings.sound && audio) {
-      [0, .25].forEach(dt => { const o = audio.createOscillator(), g = audio.createGain(); o.frequency.value = 880; g.gain.setValueAtTime(.25, audio.currentTime + dt); g.gain.exponentialRampToValueAtTime(.001, audio.currentTime + dt + .2); o.connect(g).connect(audio.destination); o.start(audio.currentTime + dt); o.stop(audio.currentTime + dt + .22); });
-    }
-  }
-
   /* Mantener la pantalla encendida durante el entrenamiento */
   let wake = null;
   async function requestWakeLock() { try { if ("wakeLock" in navigator && S.activeSession()) wake = await navigator.wakeLock.request("screen"); } catch (e) { } }
   function releaseWakeLock() { try { wake && wake.release(); } catch (e) { } wake = null; }
-  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { requestWakeLock(); tick(); } });
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") requestWakeLock(); });
 
   /* ---------- Progreso ---------- */
   function renderProgress() {
@@ -321,18 +279,9 @@
   /* ---------- Ajustes ---------- */
   function renderSettings() {
     $("#title").textContent = "Ajustes";
-    const st = S.data.settings;
     const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
     const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
     view.innerHTML = `
-      <div class="card"><h2>Descansos</h2>
-        <div class="row">
-          <label class="field" for="restBig"><span class="label">Compuestos (s)</span><input id="restBig" type="number" inputmode="numeric" value="${st.restBig}"></label>
-          <label class="field" for="restSmall"><span class="label">Aislamiento (s)</span><input id="restSmall" type="number" inputmode="numeric" value="${st.restSmall}"></label>
-        </div>
-        <label class="row"><input id="sound" type="checkbox" ${st.sound ? "checked" : ""}> Pitido al terminar el descanso</label>
-        <label class="row"><input id="vibrate" type="checkbox" ${st.vibrate ? "checked" : ""}> Vibración</label>
-      </div>
       <div class="card"><h2>Copia de seguridad</h2>
         <p class="small muted" style="margin:0">Tus datos viven en este móvil. Exporta de vez en cuando y guarda el archivo en OneDrive (en el menú de compartir elige OneDrive).</p>
         <div class="row"><button class="btn" data-act="export">Exportar</button><button class="btn ghost" data-act="import">Importar</button></div>
