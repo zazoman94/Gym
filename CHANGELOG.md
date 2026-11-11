@@ -1,7 +1,7 @@
 # Cambios
 
 ## 0.2.0 - 2026-11-11
-- Quita el temporizador de descanso y el reloj de la sesi├│n
+- Quita el temporizador de descanso y el reloj de la sesión
 - Arregla gym dev cuando Python solo es el acceso directo de la Microsoft Store
 
 ## 0.1.0 - 2026-11-11
