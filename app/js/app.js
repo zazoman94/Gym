@@ -10,7 +10,8 @@
   const dateShort = iso => new Date(iso).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit" });
   const dateLong = iso => new Date(iso).toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short" });
   const ago = iso => { const d = Math.floor((Date.now() - new Date(iso)) / 864e5); return d <= 0 ? "hoy" : d === 1 ? "ayer" : `hace ${d} días`; };
-  const CHECK = '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  const MW_URL = "https://musclewiki.com/es-es/exercise/";   /* + campo mw del ejercicio (routine.js) */
+  const CHECK ='<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 
   if (S.ENV === "dev") { document.body.classList.add("dev"); $("#envbar").hidden = false; document.title = "Gym DEV"; }
 
@@ -103,6 +104,7 @@
         </button>
         ${open ? `<div class="ex-body">
           <div class="ex-info">${bodySVG(ex.p, ex.s)}<div><ul>${ex.t.map(t => `<li>${esc(t)}</li>`).join("")}</ul></div></div>
+          ${ex.mw ? `<a class="btn ghost mwlink" href="${MW_URL}${encodeURIComponent(ex.mw)}" target="_blank" rel="noopener">Ver en MuscleWiki<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></a>` : ""}
           ${lastTxt}${hint}
           <div class="sethead"><span>#</span><span>${ex.w0 == null ? "lastre kg" : wLabel}</span><span>${unit}</span><span></span></div>
           <div class="sets">${sets.map((x, i) => `

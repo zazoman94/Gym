@@ -72,6 +72,8 @@ main { padding: 6px max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, en
 .ex-info { display: grid; grid-template-columns: 120px 1fr; gap: 12px; align-items: start; }
 .ex-info .body { width: 100%; height: auto; }
 .ex-info ul { margin: 0; padding-left: 16px; font-size: .85rem; display: grid; gap: 2px; }
+.mwlink { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px; text-decoration: none; font-size: .9rem; }
+.mwlink svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .last { font-size: .82rem; color: var(--muted); }
 .last b { color: var(--ink); font-family: var(--mono); font-weight: 500; }
 .hint { font-size: .82rem; font-weight: 600; color: var(--good); }
