@@ -61,6 +61,8 @@ window.EXERCISES = {
     t: ["Un paso adelante, ligera inclinación.", "Junta las manos delante del pecho en arco.", "Codos ligeramente flexionados y fijos."] },
   "tiron-lateral-polea": { n: "Tirón en polea baja con cuerda", p: ["sideDelt"], s: ["traps"], w0: 20,
     t: ["Codos hacia fuera y arriba.", "Para cuando los codos lleguen a la altura de los hombros."] },
+  "elev-frontal": { n: "Elevación frontal con mancuernas", p: ["frontDelt"], s: ["sideDelt", "chest"], w0: 7.5, perSide: true,
+    t: ["Sube los brazos por delante hasta la altura de los hombros.", "Codos ligeramente flexionados, sin balancear el cuerpo.", "Baja despacio."] },
   "maquina-triceps": { n: "Máquina de tríceps", p: ["triceps"], s: [], w0: 40,
     t: ["Codos alineados con el eje de la máquina.", "Extiende del todo y controla la vuelta."] },
   "triceps-tras-nuca": { n: "Extensión de tríceps con mancuerna tras la cabeza", p: ["triceps"], s: [], w0: 12.5,
@@ -88,7 +90,7 @@ window.DAYS = [
     ["zancada", 2, 10, 10, "por pierna"], ["aductor-polea", 2, 12, 15], ["gemelo-pie", 3, 10, 15], ["gemelo-sentado", 2, 12, 20],
     ["abdominales", 3, 12, 20], ["isometricos", 3, 30, 60]] },
   { name: "Empuje B", sub: "Pecho · Hombro · Tríceps", ex: [
-    ["press-incl-smith", 3, 6, 10], ["dips", 3, 8, 12], ["doble-polea", 3, 12, 15], ["tiron-lateral-polea", 3, 12, 20],
+    ["press-incl-smith", 3, 6, 10], ["dips", 3, 8, 12], ["doble-polea", 3, 12, 15], ["tiron-lateral-polea", 3, 12, 20], ["elev-frontal", 2, 12, 15],
     ["maquina-triceps", 3, 8, 12], ["triceps-tras-nuca", 2, 10, 12], ["flexiones", 2, 8, 30, "al fallo, opcional"]] },
   { name: "Tirón B", sub: "Espalda · Bíceps · Core", ex: [
     ["dominada-asistida", 4, 6, 10], ["jalon-inclinado", 3, 8, 12], ["remo-sentado", 3, 8, 12], ["face-pull", 3, 12, 15],
