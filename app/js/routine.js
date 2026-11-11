@@ -16,8 +16,9 @@ window.EXERCISES = {
     t: ["Sube hasta la altura del hombro, no más.", "Lidera con el codo, ligeramente flexionado.", "Sin balanceo: si necesitas impulso, baja el peso."] },
   "triceps-polea": { n: "Extensión de tríceps en polea", p: ["triceps"], s: ["forearms"], w0: 22,
     t: ["Codos pegados al cuerpo y quietos.", "Extiende del todo y aprieta abajo.", "Controla la subida."] },
-  "triceps-largo-polea": { n: "Extensión de tríceps sobre la cabeza en polea", p: ["triceps"], s: [], w0: 7.5,
-    t: ["De espaldas a la polea, codos apuntando al frente.", "Deja que el tríceps se estire detrás de la cabeza.", "Extiende sin abrir los codos."] },
+  /* El id se conserva por compatibilidad con sesiones ya guardadas (antes era la extensión sobre la cabeza) */
+  "triceps-largo-polea": { n: "Skullcrusher en polea a una mano", p: ["triceps"], s: [], w0: 7.5, perSide: true,
+    t: ["Tumbado en banco plano, con la cabeza hacia la polea baja.", "Codo apuntando al techo y quieto; solo se mueve el antebrazo.", "Baja la mano hacia la frente y extiende del todo."] },
   "jalon": { n: "Jalón al pecho", p: ["lats"], s: ["biceps", "midback", "rearDelt"], w0: 50,
     t: ["Pecho arriba y ligera inclinación hacia atrás.", "Tira llevando los codos hacia abajo y atrás.", "Barra a la parte alta del pecho; sube controlado."] },
   "remo-sentado": { n: "Remo sentado en polea, agarre neutro", p: ["midback", "lats"], s: ["biceps", "rearDelt"], w0: 50,
@@ -78,7 +79,7 @@ window.EXERCISES = {
 window.DAYS = [
   { name: "Empuje A", sub: "Pecho · Hombro · Tríceps", ex: [
     ["press-plano-smith", 3, 6, 10], ["press-incl-manc", 3, 8, 12], ["aperturas-maquina", 3, 12, 15],
-    ["militar-manc", 3, 8, 12], ["elev-lateral", 3, 12, 20], ["triceps-polea", 3, 10, 15], ["triceps-largo-polea", 2, 10, 15]] },
+    ["militar-manc", 3, 8, 12], ["elev-lateral", 3, 12, 20], ["triceps-polea", 3, 10, 15], ["triceps-largo-polea", 2, 10, 15, "por brazo"]] },
   { name: "Tirón A", sub: "Espalda · Bíceps", ex: [
     ["jalon", 4, 8, 12], ["remo-sentado", 3, 8, 12], ["remo-manc", 3, 8, 12], ["face-pull", 3, 12, 15],
     ["curl-inclinado", 3, 8, 12], ["curl-martillo", 3, 10, 12], ["antebrazo-polea", 2, 12, 15]] },
