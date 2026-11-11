@@ -73,7 +73,7 @@ window.EXERCISES = {
     t: ["Empieza colgando con los brazos estirados.", "Sube hasta que la barbilla pase la barra.", "Progresar es REDUCIR la asistencia."] },
   "jalon-inclinado": { n: "Jalón al pecho, variante inclinada", p: ["lats", "midback"], s: ["biceps", "rearDelt"], w0: 45, mw: "machine-pulldown",
     t: ["Tronco más inclinado hacia atrás que en el jalón normal.", "Tira hacia la parte baja del pecho juntando escápulas."] },
-  "maquina-curl": { n: "Máquina de curl", p: ["biceps"], s: [], w0: 30, mw: "machine-bicep-curl",
+  "maquina-curl": { n: "Máquina de curl", p: ["biceps"], s: [], w0: 30, mw: "machine-standing-plate-loaded-preacher-curl",
     t: ["Brazos bien apoyados en el soporte.", "Baja hasta casi estirar del todo."] }
 };
 
