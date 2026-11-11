@@ -32,14 +32,19 @@
     return f.length ? (f[0].day + 1) % DAYS.length : 0;
   }
 
+  /* Series iniciales de un ejercicio: las previstas (o las de la última vez, hasta 6) con el último peso usado */
+  function newSets(id, planSets) {
+    const last = S.lastFor(id);
+    const w = last ? last.sets[0].w : EXERCISES[id].w0;
+    return Array.from({ length: Math.max(planSets, last ? Math.min(last.sets.length, 6) : 0) }, () => ({ w: w == null ? null : w, r: null, done: false }));
+  }
+
+  /* Completado = todas las series que hay en pantalla están marcadas (y hay al menos una) */
+  const isComplete = sets => sets.length > 0 && sets.every(x => x.done);
+
   function startSession(day) {
     const entries = {};
-    DAYS[day].ex.forEach(([id, sets]) => {
-      const last = S.lastFor(id);
-      const ex = EXERCISES[id];
-      const w = last ? last.sets[0].w : ex.w0;
-      entries[id] = Array.from({ length: Math.max(sets, last ? Math.min(last.sets.length, 6) : 0) }, () => ({ w: w == null ? null : w, r: null, done: false }));
-    });
+    DAYS[day].ex.forEach(([id, sets]) => { entries[id] = newSets(id, sets); });
     const s = { id: Date.now().toString(36), day, start: new Date().toISOString(), end: null, entries };
     S.data.sessions.push(s); S.data.active = s.id; S.save();
     ui.open = DAYS[day].ex[0][0];
@@ -67,11 +72,15 @@
     const plan = DAYS[s.day];
     $("#title").textContent = plan.name;
     let doneEx = 0;
+    /* Si la rutina tiene un ejercicio que no estaba al empezar esta sesión (rutina cambiada), se añade con sus series */
+    let added = false;
+    plan.ex.forEach(([id, planSets]) => { if (!s.entries[id]) { s.entries[id] = newSets(id, planSets); added = true; } });
+    if (added) S.save();
     const cards = plan.ex.map(([id, planSets, lo, hi, note]) => {
       const ex = EXERCISES[id];
-      const sets = s.entries[id] || (s.entries[id] = []);
+      const sets = s.entries[id];
       const nDone = sets.filter(x => x.done).length;
-      const complete = nDone >= planSets;
+      const complete = isComplete(sets);
       if (complete) doneEx++;
       const open = ui.open === id;
       const unit = ex.unit === "s" ? "seg" : "reps";
@@ -89,7 +98,7 @@
       const wLabel = ex.assisted ? "asist. kg" : ex.perSide ? "kg c/u" : "kg";
       return `<section class="ex ${complete ? "done" : ""}" data-ex="${id}">
         <button class="ex-head" data-toggle="${id}" aria-expanded="${open}">
-          <h3>${esc(ex.n)}</h3><span class="count">${nDone}/${planSets}</span>
+          <h3>${esc(ex.n)}</h3><span class="count">${nDone}/${sets.length}</span>
           <span class="meta">${planSets} × ${lo === hi ? lo : lo + "-" + hi} ${unit}${note ? " · " + esc(note) : ""}</span>
         </button>
         ${open ? `<div class="ex-body">
@@ -131,8 +140,7 @@
         if (set.r == null) { const ph = document.getElementById(`r-${id}-${i}`); set.r = parseNum(ph && ph.placeholder); }
         set.done = true;
         const plan = DAYS[s.day].ex.find(x => x[0] === id);
-        const allDone = s.entries[id].filter(x => x.done).length >= plan[1] && s.entries[id].every(x => x.done);
-        if (allDone) { const idx = DAYS[s.day].ex.indexOf(plan); const nx = DAYS[s.day].ex.slice(idx + 1).find(x => !(s.entries[x[0]] || []).some(y => y.done)); if (nx) ui.open = nx[0]; }
+        if (isComplete(s.entries[id])) { const idx = DAYS[s.day].ex.indexOf(plan); const nx = DAYS[s.day].ex.slice(idx + 1).find(x => !(s.entries[x[0]] || []).some(y => y.done)); if (nx) ui.open = nx[0]; }
       } else set.done = false;
       S.save(); render(); return;
     }
