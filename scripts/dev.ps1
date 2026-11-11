@@ -17,8 +17,9 @@ $ip = (Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
   Where-Object { $_.IPAddress -match '^(192\.168|10\.|172\.(1[6-9]|2\d|3[01]))' -and $_.PrefixOrigin -ne 'WellKnown' } |
   Select-Object -First 1).IPAddress
 
-$py = Get-Command python -ErrorAction SilentlyContinue
-if (-not $py) { $py = Get-Command py -ErrorAction SilentlyContinue }
+# Ignora el acceso directo de la Microsoft Store (WindowsApps): no es un Python real y falla al ejecutarlo.
+$py = Get-Command python -ErrorAction SilentlyContinue | Where-Object { $_.Source -notlike '*\WindowsApps\*' } | Select-Object -First 1
+if (-not $py) { $py = Get-Command py -ErrorAction SilentlyContinue | Where-Object { $_.Source -notlike '*\WindowsApps\*' } | Select-Object -First 1 }
 
 Write-Host ""
 Write-Host "  Gym DESARROLLO" -ForegroundColor Yellow
