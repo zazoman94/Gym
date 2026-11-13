@@ -31,8 +31,8 @@ window.EXERCISES = {
     t: ["Banco a 45-60°, brazos colgando por detrás del cuerpo.", "No adelantes el codo al subir.", "Baja del todo para estirar el bíceps."] },
   "curl-martillo": { n: "Curl martillo con mancuernas", p: ["biceps", "forearms"], s: [], w0: 12.5, perSide: true, mw: "dumbbell-hammer-curl",
     t: ["Agarre neutro (palmas mirándose).", "Codos fijos a los lados.", "Sin balancear el cuerpo."] },
-  "antebrazo-polea": { n: "Antebrazo en polea", p: ["forearms"], s: [], w0: 7.5, mw: "cable-single-arm-reverse-curl",
-    t: ["Antebrazo quieto; solo se mueve la muñeca.", "Rango completo, bajando del todo."] },
+  "antebrazo-polea": { n: "Curl invertido en polea a una mano", p: ["forearms"], s: ["biceps"], w0: 7.5, perSide: true, mw: "cable-single-arm-reverse-curl",
+    t: ["Agarre con las palmas hacia abajo.", "Codo pegado al costado y quieto.", "Sube hasta la altura del hombro y baja despacio."] },
   "sentadilla-manc": { n: "Sentadilla goblet con mancuerna", p: ["quads", "glutes"], s: ["adductors", "abs"], w0: 12.5, mw: "dumbbell-goblet-squat",
     t: ["Mancuerna pegada al pecho, tronco erguido.", "Rodillas en la dirección de la punta de los pies.", "Si 12 reps son fáciles, pasa a más peso o a la Smith."] },
   "pm-polea": { n: "Peso muerto en polea baja", p: ["hamstrings", "glutes"], s: ["lowback"], w0: 35, mw: "cable-bar-romanian-deadlift",
@@ -84,7 +84,7 @@ window.DAYS = [
     ["militar-manc", 3, 8, 12], ["elev-lateral", 3, 12, 20], ["triceps-polea", 3, 10, 15], ["triceps-largo-polea", 2, 10, 15, "por brazo"]] },
   { name: "Tirón A", sub: "Espalda · Bíceps", ex: [
     ["jalon", 4, 8, 12], ["remo-sentado", 3, 8, 12], ["remo-manc", 3, 8, 12], ["face-pull", 3, 12, 15],
-    ["curl-inclinado", 3, 8, 12], ["curl-martillo", 3, 10, 12], ["antebrazo-polea", 2, 12, 15]] },
+    ["curl-inclinado", 3, 8, 12], ["curl-martillo", 3, 10, 12], ["antebrazo-polea", 2, 12, 15, "por brazo"]] },
   { name: "Pierna", sub: "Mantenimiento · Core", ex: [
     ["sentadilla-manc", 3, 8, 12], ["pm-polea", 3, 8, 10], ["ext-piernas", 2, 10, 15], ["curl-femoral-polea", 2, 10, 15],
     ["zancada", 2, 10, 10, "por pierna"], ["aductor-polea", 2, 12, 15], ["gemelo-pie", 3, 10, 15], ["gemelo-sentado", 2, 12, 20],

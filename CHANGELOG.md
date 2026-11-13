@@ -1,5 +1,8 @@
 # Cambios
 
+## 0.2.3 - 2026-11-13
+- Cambia el ejercicio de antebrazo por el curl invertido en polea a una mano
+
 ## 0.2.2 - 2026-11-13
 - Corrige el enlace de MuscleWiki del ejercicio de antebrazo en polea
 
