@@ -1,5 +1,8 @@
 # Cambios
 
+## 0.2.2 - 2026-11-13
+- Corrige el enlace de MuscleWiki del ejercicio de antebrazo en polea
+
 ## 0.2.1 - 2026-11-11
 - Renombra la máquina de curl como curl predicador en máquina
 - Corrige el enlace de MuscleWiki de la máquina de curl (versión sentado)

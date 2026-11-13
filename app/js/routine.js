@@ -31,7 +31,7 @@ window.EXERCISES = {
     t: ["Banco a 45-60°, brazos colgando por detrás del cuerpo.", "No adelantes el codo al subir.", "Baja del todo para estirar el bíceps."] },
   "curl-martillo": { n: "Curl martillo con mancuernas", p: ["biceps", "forearms"], s: [], w0: 12.5, perSide: true, mw: "dumbbell-hammer-curl",
     t: ["Agarre neutro (palmas mirándose).", "Codos fijos a los lados.", "Sin balancear el cuerpo."] },
-  "antebrazo-polea": { n: "Antebrazo en polea", p: ["forearms"], s: [], w0: 7.5, mw: "cable-wrist-curl",
+  "antebrazo-polea": { n: "Antebrazo en polea", p: ["forearms"], s: [], w0: 7.5, mw: "cable-single-arm-reverse-curl",
     t: ["Antebrazo quieto; solo se mueve la muñeca.", "Rango completo, bajando del todo."] },
   "sentadilla-manc": { n: "Sentadilla goblet con mancuerna", p: ["quads", "glutes"], s: ["adductors", "abs"], w0: 12.5, mw: "dumbbell-goblet-squat",
     t: ["Mancuerna pegada al pecho, tronco erguido.", "Rodillas en la dirección de la punta de los pies.", "Si 12 reps son fáciles, pasa a más peso o a la Smith."] },
