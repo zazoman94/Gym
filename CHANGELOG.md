@@ -1,5 +1,9 @@
 # Cambios
 
+## 0.3.0 - 2026-11-15
+- Pide confirmación al terminar un entrenamiento con ejercicios sin completar
+- Permite editar una sesión del historial y seguir con ella si se terminó por error
+
 ## 0.2.3 - 2026-11-13
 - Cambia el ejercicio de antebrazo por el curl invertido en polea a una mano
 
