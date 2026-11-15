@@ -43,6 +43,9 @@
 
   /* Completado = todas las series que hay en pantalla están marcadas (y hay al menos una) */
   const isComplete = sets => sets.length > 0 && sets.every(x => x.done);
+  /* Ejercicios del día sin completar (con alguna serie sin marcar) */
+  const pendingEx = s => DAYS[s.day].ex.filter(([id]) => !isComplete(s.entries[id] || [])).length;
+  const showConfirm = () => { const c = view.querySelector(".confirm"); if (c) c.scrollIntoView({ block: "center" }); };
 
   /* Solo las series marcadas, sin ejercicios vacíos (lo que se guarda al terminar) */
   function doneEntries(entries) {
@@ -181,6 +184,8 @@
     const ed = editing();
     const conf = ui.confirm === "discard" && !ed ? `<div class="confirm"><b>¿Descartar este entrenamiento?</b><span class="small">Se borran las series que has marcado hoy.</span>
         <div class="row"><button class="btn danger" data-act="discard-yes">Descartar</button><button class="btn ghost" data-act="cancel">Volver</button></div></div>`
+      : ui.confirm === "finish" && !ed ? (n => `<div class="confirm"><b>${n === 1 ? "Te queda 1 ejercicio sin completar" : `Te quedan ${n} ejercicios sin completar`}. ¿Terminar igualmente?</b><span class="small">Se guardan solo las series marcadas.</span>
+        <div class="row"><button class="btn danger" data-act="finish-yes">Terminar</button><button class="btn ghost" data-act="cancel">Seguir entrenando</button></div></div>`)(plan.ex.length - doneEx)
       : ui.confirm === "cancel-edit" && ed ? `<div class="confirm"><b>¿Descartar los cambios?</b><span class="small">La sesión quedará exactamente como estaba antes de editarla.</span>
         <div class="row"><button class="btn danger" data-act="cancel-edit-yes">Descartar cambios</button><button class="btn ghost" data-act="cancel">Seguir editando</button></div></div>` : "";
     view.innerHTML = `${ed ? `<div class="editbar" role="status">Editando la sesión del ${esc(dateLong(s.start))}</div>` : ""}
@@ -213,15 +218,17 @@
     if (t.dataset.delset && s) { const a = s.entries[t.dataset.delset]; readInputs(t.dataset.delset); a.pop(); S.save(); render(); return; }
     const act = t.dataset.act;
     if (act === "save-edit") return saveEdit();
-    if (act === "cancel-edit" && editing()) { if (editChanged()) { ui.confirm = "cancel-edit"; render(); } else cancelEdit(); return; }
+    if (act === "cancel-edit" && editing()) { if (editChanged()) { ui.confirm = "cancel-edit"; render(); showConfirm(); } else cancelEdit(); return; }
     if (act === "cancel-edit-yes") return cancelEdit();
     if (act === "edit-session") return startEdit(t.dataset.id);
-    if (act === "finish" && s && !editing()) {
+    /* Antes de terminar: si queda algo sin completar, confirmar dentro de la página */
+    if (act === "finish" && s && !editing() && pendingEx(s) > 0) { ui.confirm = "finish"; render(); showConfirm(); return; }
+    if ((act === "finish" || act === "finish-yes") && s && !editing()) {
       s.end = new Date().toISOString();
       s.entries = doneEntries(s.entries);
       if (!Object.keys(s.entries).length) { S.data.sessions = S.data.sessions.filter(x => x.id !== s.id); toast("No había series marcadas: no se ha guardado."); }
       else toast("Entrenamiento guardado");
-      S.data.active = null; S.save(); releaseWakeLock(); ui.open = null; render(); window.scrollTo(0, 0); return;
+      S.data.active = null; S.save(); releaseWakeLock(); ui.open = null; ui.confirm = null; render(); window.scrollTo(0, 0); return;
     }
     if (act === "discard") { ui.confirm = "discard"; render(); return; }
     if (act === "discard-yes" && s && !editing()) { S.data.sessions = S.data.sessions.filter(x => x.id !== s.id); S.data.active = null; S.save(); ui.confirm = null; releaseWakeLock(); render(); toast("Entrenamiento descartado"); return; }
