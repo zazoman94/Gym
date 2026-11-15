@@ -78,13 +78,29 @@
     goTab("train");
   }
 
+  /* Hora de fin automática al editar: si se han añadido series, se alarga al ritmo medio de la sesión
+     original (duración ÷ series hechas) por cada serie nueva; si no, se conserva. Así no cuenta el
+     tiempo muerto entre terminar y editar. e.durMin (campo "Duración") la sustituye si se ha escrito. */
+  function autoEnd(e, entries) {
+    const nSets = en => Object.values(en).reduce((a, x) => a + x.length, 0);
+    const before = nSets(e.backup.entries), added = nSets(entries) - before;
+    const end0 = new Date(e.backup.end).getTime(), dur = end0 - new Date(e.backup.start).getTime();
+    return added > 0 && before > 0 && dur > 0 ? new Date(end0 + dur / before * added).toISOString() : e.backup.end;
+  }
+  /* Minutos que se guardarán al pulsar "Guardar cambios" */
+  function editMinutes(s, e) {
+    if (e.durMin) return e.durMin;
+    return Math.round((new Date(autoEnd(e, doneEntries(s.entries))) - new Date(s.start)) / 6e4);
+  }
+
+  const durHint = e => e.durMin ? "Duración escrita por ti. Vacíala para que se calcule sola." : "Se ajusta sola si añades series. Cámbiala si no es correcta.";
+
   function saveEdit() {
     const s = S.activeSession(), e = editing(); if (!s || !e) return;
     const entries = doneEntries(s.entries);
     if (!Object.keys(entries).length) { toast("No hay ninguna serie marcada. Marca alguna o cancela la edición."); return; }
     s.entries = entries;
-    /* Terminada hace menos de 3 h: se siguió entrenando, el fin pasa a ser ahora. Si no, se conserva. */
-    s.end = Date.now() - new Date(e.backup.end) < 3 * 3600e3 ? new Date().toISOString() : e.backup.end;
+    s.end = e.durMin ? new Date(new Date(s.start).getTime() + e.durMin * 6e4).toISOString() : autoEnd(e, entries);
     S.data.active = null; S.data.editing = null; S.save();
     releaseWakeLock(); ui.open = null; ui.histOpen = s.id;
     goTab("history"); toast("Cambios guardados");
@@ -92,7 +108,8 @@
 
   function editChanged() {
     const s = S.activeSession(), e = editing();
-    return JSON.stringify(doneEntries(s.entries)) !== JSON.stringify(doneEntries(e.backup.entries));
+    const origMin = Math.round((new Date(e.backup.end) - new Date(e.backup.start)) / 6e4);
+    return JSON.stringify(doneEntries(s.entries)) !== JSON.stringify(doneEntries(e.backup.entries)) || (!!e.durMin && e.durMin !== origMin);
   }
 
   function cancelEdit() {
@@ -188,7 +205,9 @@
         <div class="row"><button class="btn danger" data-act="finish-yes">Terminar</button><button class="btn ghost" data-act="cancel">Seguir entrenando</button></div></div>`)(plan.ex.length - doneEx)
       : ui.confirm === "cancel-edit" && ed ? `<div class="confirm"><b>¿Descartar los cambios?</b><span class="small">La sesión quedará exactamente como estaba antes de editarla.</span>
         <div class="row"><button class="btn danger" data-act="cancel-edit-yes">Descartar cambios</button><button class="btn ghost" data-act="cancel">Seguir editando</button></div></div>` : "";
-    view.innerHTML = `${ed ? `<div class="editbar" role="status">Editando la sesión del ${esc(dateLong(s.start))}</div>` : ""}
+    view.innerHTML = `${ed ? `<div class="editbar" role="status">Editando la sesión del ${esc(dateLong(s.start))}</div>
+      <div class="editdur"><label class="field" for="editDur"><span class="label">Duración (min)</span><input id="editDur" type="number" inputmode="numeric" min="1" max="600" value="${editMinutes(s, ed)}"></label>
+        <span class="muted small">${durHint(ed)}</span></div>` : ""}
       <div class="session-head"><span class="muted small">${doneEx} de ${plan.ex.length} ejercicios</span><span class="muted small">${plan.sub}</span></div>
       <div class="progressbar"><div style="width:${pct}%"></div></div>
       ${cards}
@@ -257,6 +276,18 @@
         s.entries[id].forEach((x, j) => { const el = document.getElementById(`w-${id}-${j}`); if (el && j > +i && !x.done) el.value = fmtW(x.w); });
       } else set.r = parseNum(t.value);
       S.save();
+    }
+    if (t.id === "editDur" && editing()) {
+      const v = parseInt(t.value, 10);
+      const e = editing();
+      if (t.value.trim() === "") e.durMin = null;                       // vacío: vuelve al cálculo automático
+      else if (v > 0 && v <= 600) e.durMin = v;
+      else toast("Pon una duración entre 1 y 600 minutos");
+      S.save();
+      /* Sin redibujar la pantalla: si se pulsa "Guardar cambios" justo después, la pulsación no se pierde */
+      t.value = editMinutes(S.activeSession(), e);
+      t.closest(".editdur").querySelector(".small").textContent = durHint(e);
+      return;
     }
     if (t.id === "progEx") { ui.progEx = t.value; renderProgress(); }
     if (t.id === "importfile" && t.files[0]) {

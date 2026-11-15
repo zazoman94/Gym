@@ -1,5 +1,9 @@
 # Cambios
 
+## 0.3.1 - 2026-11-15
+- Añade el campo «Duración (min)» al editar una sesión para poder corregirla a mano
+- Al editar una sesión, alarga la duración según las series añadidas en vez de contar el tiempo hasta la edición
+
 ## 0.3.0 - 2026-11-15
 - Pide confirmación al terminar un entrenamiento con ejercicios sin completar
 - Permite editar una sesión del historial y seguir con ella si se terminó por error
