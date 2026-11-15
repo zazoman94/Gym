@@ -83,8 +83,13 @@
     const entries = doneEntries(s.entries);
     if (!Object.keys(entries).length) { toast("No hay ninguna serie marcada. Marca alguna o cancela la edición."); return; }
     s.entries = entries;
-    /* Terminada hace menos de 3 h: se siguió entrenando, el fin pasa a ser ahora. Si no, se conserva. */
-    s.end = Date.now() - new Date(e.backup.end) < 3 * 3600e3 ? new Date().toISOString() : e.backup.end;
+    /* Duración: si se han añadido series, se alarga al ritmo medio de la sesión original
+       (duración ÷ series hechas) por cada serie nueva. Si no, se conserva la hora de fin.
+       Así no cuenta el tiempo muerto entre terminar y editar. */
+    const nSets = en => Object.values(en).reduce((a, x) => a + x.length, 0);
+    const before = nSets(e.backup.entries), added = nSets(entries) - before;
+    const end0 = new Date(e.backup.end).getTime(), dur = end0 - new Date(e.backup.start).getTime();
+    s.end = added > 0 && before > 0 && dur > 0 ? new Date(end0 + dur / before * added).toISOString() : e.backup.end;
     S.data.active = null; S.data.editing = null; S.save();
     releaseWakeLock(); ui.open = null; ui.histOpen = s.id;
     goTab("history"); toast("Cambios guardados");
