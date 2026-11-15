@@ -16,11 +16,12 @@
   if (S.ENV === "dev") { document.body.classList.add("dev"); $("#envbar").hidden = false; document.title = "Gym DEV"; }
 
   /* ---------- Navegación ---------- */
-  document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => {
-    ui.tab = b.dataset.tab; ui.confirm = null;
-    document.querySelectorAll(".tabs button").forEach(x => x === b ? x.setAttribute("aria-current", "page") : x.removeAttribute("aria-current"));
+  function goTab(tab) {
+    ui.tab = tab; ui.confirm = null;
+    document.querySelectorAll(".tabs button").forEach(x => x.dataset.tab === tab ? x.setAttribute("aria-current", "page") : x.removeAttribute("aria-current"));
     render(); window.scrollTo(0, 0);
-  }));
+  }
+  document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => { ui.histOpen = null; goTab(b.dataset.tab); }));
 
   function render() {
     const fn = { train: renderTrain, progress: renderProgress, history: renderHistory, settings: renderSettings }[ui.tab];
@@ -42,6 +43,63 @@
 
   /* Completado = todas las series que hay en pantalla están marcadas (y hay al menos una) */
   const isComplete = sets => sets.length > 0 && sets.every(x => x.done);
+
+  /* Solo las series marcadas, sin ejercicios vacíos (lo que se guarda al terminar) */
+  function doneEntries(entries) {
+    const out = {};
+    for (const k in entries) { const d = entries[k].filter(x => x.done); if (d.length) out[k] = d; }
+    return out;
+  }
+
+  /* ---------- Editar una sesión del historial ----------
+     Mientras se edita, la sesión vuelve a estar "en curso" (end = null y active = su id), así que no cuenta
+     para "Siguiente", "Última vez" ni gráficas. La copia original queda en S.data.editing.backup (guardada). */
+  const editing = () => { const e = S.data.editing; return e && S.data.active === e.id ? e : null; };
+
+  function startEdit(id) {
+    if (S.activeSession()) { toast(editing() ? "Primero guarda o cancela la sesión que estás editando." : "Primero termina o descarta el entrenamiento en curso."); return; }
+    const s = S.data.sessions.find(x => x.id === id);
+    if (!s || !DAYS[s.day]) return;
+    S.data.editing = { id, backup: JSON.parse(JSON.stringify(s)) };
+    s.end = null;
+    /* Volver a mostrar todos los ejercicios del día con sus series previstas */
+    DAYS[s.day].ex.forEach(([exId, planSets]) => {
+      const cur = s.entries[exId] || [];
+      if (!cur.length) { s.entries[exId] = newSets(exId, planSets); return; }
+      const w = cur[cur.length - 1].w;
+      while (cur.length < planSets) cur.push({ w: w == null ? null : w, r: null, done: false });
+    });
+    S.data.active = id; S.save();
+    ui.open = null; ui.histOpen = null;
+    requestWakeLock();
+    goTab("train");
+  }
+
+  function saveEdit() {
+    const s = S.activeSession(), e = editing(); if (!s || !e) return;
+    const entries = doneEntries(s.entries);
+    if (!Object.keys(entries).length) { toast("No hay ninguna serie marcada. Marca alguna o cancela la edición."); return; }
+    s.entries = entries;
+    /* Terminada hace menos de 3 h: se siguió entrenando, el fin pasa a ser ahora. Si no, se conserva. */
+    s.end = Date.now() - new Date(e.backup.end) < 3 * 3600e3 ? new Date().toISOString() : e.backup.end;
+    S.data.active = null; S.data.editing = null; S.save();
+    releaseWakeLock(); ui.open = null; ui.histOpen = s.id;
+    goTab("history"); toast("Cambios guardados");
+  }
+
+  function editChanged() {
+    const s = S.activeSession(), e = editing();
+    return JSON.stringify(doneEntries(s.entries)) !== JSON.stringify(doneEntries(e.backup.entries));
+  }
+
+  function cancelEdit() {
+    const e = editing(); if (!e) return;
+    const i = S.data.sessions.findIndex(x => x.id === e.id);
+    if (i >= 0) S.data.sessions[i] = e.backup;
+    S.data.active = null; S.data.editing = null; S.save();
+    releaseWakeLock(); ui.open = null; ui.histOpen = e.id;
+    goTab("history"); toast("Edición cancelada: la sesión queda como estaba");
+  }
 
   function startSession(day) {
     const entries = {};
@@ -120,13 +178,18 @@
       </section>`;
     }).join("");
     const pct = Math.round(doneEx / plan.ex.length * 100);
-    const conf = ui.confirm === "discard" ? `<div class="confirm"><b>¿Descartar este entrenamiento?</b><span class="small">Se borran las series que has marcado hoy.</span>
-        <div class="row"><button class="btn danger" data-act="discard-yes">Descartar</button><button class="btn ghost" data-act="cancel">Volver</button></div></div>` : "";
-    view.innerHTML = `<div class="session-head"><span class="muted small">${doneEx} de ${plan.ex.length} ejercicios</span><span class="muted small">${plan.sub}</span></div>
+    const ed = editing();
+    const conf = ui.confirm === "discard" && !ed ? `<div class="confirm"><b>¿Descartar este entrenamiento?</b><span class="small">Se borran las series que has marcado hoy.</span>
+        <div class="row"><button class="btn danger" data-act="discard-yes">Descartar</button><button class="btn ghost" data-act="cancel">Volver</button></div></div>`
+      : ui.confirm === "cancel-edit" && ed ? `<div class="confirm"><b>¿Descartar los cambios?</b><span class="small">La sesión quedará exactamente como estaba antes de editarla.</span>
+        <div class="row"><button class="btn danger" data-act="cancel-edit-yes">Descartar cambios</button><button class="btn ghost" data-act="cancel">Seguir editando</button></div></div>` : "";
+    view.innerHTML = `${ed ? `<div class="editbar" role="status">Editando la sesión del ${esc(dateLong(s.start))}</div>` : ""}
+      <div class="session-head"><span class="muted small">${doneEx} de ${plan.ex.length} ejercicios</span><span class="muted small">${plan.sub}</span></div>
       <div class="progressbar"><div style="width:${pct}%"></div></div>
       ${cards}
       ${conf}
-      <div class="row"><button class="btn" data-act="finish">Terminar entrenamiento</button><button class="btn ghost" data-act="discard">Descartar</button></div>`;
+      ${ed ? `<div class="row"><button class="btn" data-act="save-edit">Guardar cambios</button><button class="btn ghost" data-act="cancel-edit">Cancelar</button></div>`
+        : `<div class="row"><button class="btn" data-act="finish">Terminar entrenamiento</button><button class="btn ghost" data-act="discard">Descartar</button></div>`}`;
   }
 
   view.addEventListener("click", e => {
@@ -149,15 +212,19 @@
     if (t.dataset.addset && s) { const a = s.entries[t.dataset.addset]; readInputs(t.dataset.addset); const p = a[a.length - 1]; a.push({ w: p ? p.w : null, r: null, done: false }); S.save(); render(); return; }
     if (t.dataset.delset && s) { const a = s.entries[t.dataset.delset]; readInputs(t.dataset.delset); a.pop(); S.save(); render(); return; }
     const act = t.dataset.act;
-    if (act === "finish" && s) {
+    if (act === "save-edit") return saveEdit();
+    if (act === "cancel-edit" && editing()) { if (editChanged()) { ui.confirm = "cancel-edit"; render(); } else cancelEdit(); return; }
+    if (act === "cancel-edit-yes") return cancelEdit();
+    if (act === "edit-session") return startEdit(t.dataset.id);
+    if (act === "finish" && s && !editing()) {
       s.end = new Date().toISOString();
-      for (const k in s.entries) { s.entries[k] = s.entries[k].filter(x => x.done); if (!s.entries[k].length) delete s.entries[k]; }
+      s.entries = doneEntries(s.entries);
       if (!Object.keys(s.entries).length) { S.data.sessions = S.data.sessions.filter(x => x.id !== s.id); toast("No había series marcadas: no se ha guardado."); }
       else toast("Entrenamiento guardado");
       S.data.active = null; S.save(); releaseWakeLock(); ui.open = null; render(); window.scrollTo(0, 0); return;
     }
     if (act === "discard") { ui.confirm = "discard"; render(); return; }
-    if (act === "discard-yes" && s) { S.data.sessions = S.data.sessions.filter(x => x.id !== s.id); S.data.active = null; S.save(); ui.confirm = null; releaseWakeLock(); render(); toast("Entrenamiento descartado"); return; }
+    if (act === "discard-yes" && s && !editing()) { S.data.sessions = S.data.sessions.filter(x => x.id !== s.id); S.data.active = null; S.save(); ui.confirm = null; releaseWakeLock(); render(); toast("Entrenamiento descartado"); return; }
     if (act === "cancel") { ui.confirm = null; render(); return; }
     if (act === "del-session") { ui.confirm = "del:" + t.dataset.id; render(); return; }
     if (act === "del-yes") { S.data.sessions = S.data.sessions.filter(x => x.id !== t.dataset.id); S.save(); ui.confirm = null; render(); toast("Sesión borrada"); return; }
@@ -279,10 +346,10 @@
       const mins = Math.round((new Date(s.end) - new Date(s.start)) / 6e4);
       const nSets = Object.values(s.entries).reduce((a, x) => a + x.length, 0);
       const conf = ui.confirm === "del:" + s.id;
-      return `<details class="hist" ${conf ? "open" : ""}><summary><span><b>${DAYS[s.day] ? DAYS[s.day].name : "Día " + (s.day + 1)}</b><br><span class="muted small">${dateLong(s.start)}</span></span><span class="muted small" style="text-align:right">${mins} min<br>${nSets} series</span></summary>
+      return `<details class="hist" ${conf || ui.histOpen === s.id ? "open" : ""}><summary><span><b>${DAYS[s.day] ? DAYS[s.day].name : "Día " + (s.day + 1)}</b><br><span class="muted small">${dateLong(s.start)}</span></span><span class="muted small" style="text-align:right">${mins} min<br>${nSets} series</span></summary>
         <div class="det">${Object.entries(s.entries).map(([id, sets]) => `<div class="l"><span>${esc(EXERCISES[id] ? EXERCISES[id].n : id)}</span><span>${sets.map(x => (x.w ? fmtW(x.w) + "×" : "") + x.r).join(" · ")}</span></div>`).join("")}
         ${conf ? `<div class="confirm"><b>¿Borrar esta sesión?</b><div class="row"><button class="btn danger" data-act="del-yes" data-id="${s.id}">Borrar</button><button class="btn ghost" data-act="cancel">Volver</button></div></div>`
-          : `<div><button class="chip" data-act="del-session" data-id="${s.id}">Borrar sesión</button></div>`}</div></details>`;
+          : `<div class="row">${DAYS[s.day] ? `<button class="btn ghost" data-act="edit-session" data-id="${s.id}">Editar sesión</button>` : ""}<button class="btn danger" data-act="del-session" data-id="${s.id}">Borrar sesión</button></div>`}</div></details>`;
     }).join("");
   }
 

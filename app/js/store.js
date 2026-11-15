@@ -7,15 +7,29 @@
   const KEY = `gym:${ENV}:v1`;
   const SCHEMA = 1;
 
-  const empty = () => ({ schema: SCHEMA, sessions: [], active: null, settings: {} });
+  /* editing: { id, backup } mientras se edita una sesión del historial. backup es la copia exacta
+     de la sesión antes de editar (para "Cancelar"); se guarda aquí para sobrevivir a un cierre de la app.
+     Es un campo nuevo y opcional: los datos antiguos simplemente no lo tienen (no hace falta subir SCHEMA). */
+  const empty = () => ({ schema: SCHEMA, sessions: [], active: null, editing: null, settings: {} });
+
+  /* Une con los valores por defecto y deja la edición en un estado coherente */
+  function normalize(d) {
+    const base = empty();
+    const out = { ...base, ...d, settings: { ...base.settings, ...(d.settings || {}) } };
+    const e = out.editing;
+    if (e) {
+      const i = e.backup ? out.sessions.findIndex(s => s.id === e.id) : -1;
+      if (i < 0) out.editing = null;                       // copia rota o sesión inexistente: se ignora
+      else if (out.active !== e.id) { out.sessions[i] = e.backup; out.editing = null; }  // incoherente: se restaura el original
+    }
+    return out;
+  }
 
   function load() {
     try {
       const raw = localStorage.getItem(KEY);
       if (!raw) return empty();
-      const d = JSON.parse(raw);
-      const base = empty();
-      return { ...base, ...d, settings: { ...base.settings, ...(d.settings || {}) } };
+      return normalize(JSON.parse(raw));
     } catch (e) { return empty(); }
   }
 
@@ -60,8 +74,7 @@
       const obj = JSON.parse(text);
       const d = obj && obj.data ? obj.data : obj;
       if (!d || !Array.isArray(d.sessions)) throw new Error("El archivo no tiene el formato de copia de Gym.");
-      const base = empty();
-      this.data = { ...base, ...d, settings: { ...base.settings, ...(d.settings || {}) } };
+      this.data = normalize(d);
       this.save();
       return this.data.sessions.length;
     },
@@ -86,7 +99,7 @@
           sessions.push({ id: "demo" + (k++), day: d, start: start.toISOString(), end: new Date(start.getTime() + 70 * 6e4).toISOString(), entries });
         }
       }
-      this.data.sessions = sessions; this.data.active = null; this.save();
+      this.data.sessions = sessions; this.data.active = null; this.data.editing = null; this.save();
     }
   };
   window.Store = Store;
